@@ -33,6 +33,7 @@ struct Vertex{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
         return new{M,T}(g.model, v)
     end
 end
+Base.broadcastable(v::Vertex) = Ref(v)
 
 function JuMP.add_variable(v::Vertex, var...)
     var_ref = JuMP.add_variable(v.model, var...)

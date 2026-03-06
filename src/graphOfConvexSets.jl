@@ -41,15 +41,16 @@ function JuMP.add_variable(v::Vertex, var...)
     return var_ref
 end
 
-function JuMP.add_constraint(v::Vertex, con)
-    _check(v.model, con, con, v.vertex)
-    con_ref = JuMP.add_constraint(v.model, con)
+function JuMP.add_constraint(v::Vertex, con, var...)
+    println(MOI.get(v.model, VariableVertexOrEdge(), JuMP.moi_function(con).terms[1].scalar_term.variable))
+    _check(v.model, con, JuMP.moi_function(con), v.vertex)
+    con_ref = JuMP.add_constraint(v.model, con, var...)
     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
     return con_ref
 end
 
 function JuMP.set_objective_function(v::Vertex, func)
-    _check(v.model, func, func, v.vertex)
+    _check(v.model, func, JuMP.moi_function(func), v.vertex)
     MOI.set(v.model, VertexOrEdgeObjective(v), moi_function(func))
 end
 
@@ -63,21 +64,21 @@ struct Edge{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
     end
 end
 
-function JuMP.add_variable(e::Edge, var)
-    var_ref = JuMP.add_variable(e.model, var)
+function JuMP.add_variable(e::Edge, var...)
+    var_ref = JuMP.add_variable(e.model, var...)
     MOI.set(e.model, VariableVertexOrEdge(), var_ref, e.edge)
     return var_ref
 end
 
-function JuMP.add_constraint(e::Edge, con)
-    _check(e.model, con, con, e.edge)
-    con_ref = JuMP.add_constraint(e.model, con)
+function JuMP.add_constraint(e::Edge, con, var...)
+    _check(e.model, con, JuMP.moi_function(con), e.edge)
+    con_ref = JuMP.add_constraint(e.model, con, var...)
     MOI.set(e.model, ConstraintVertexOrEdge(), con_ref, e.edge)
     return con_ref
 end
 
 function JuMP.set_objective_function(e::Edge, func)
-    _check(e.model, func, func, e.edge)
+    _check(e.model, func, JuMP.moi_function(func), e.edge)
     MOI.set(e.model, VertexOrEdgeObjective(e), moi_function(func))
 end
 

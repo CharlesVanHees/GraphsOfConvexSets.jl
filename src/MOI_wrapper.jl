@@ -127,6 +127,22 @@ Check expressions contain only variables of the vertices or edges they are assoc
 """
 _check(_, e, ::MOI.VariableIndex, ::Nothing) = error("Expression `$e` is not assigned to any vertex or edge. You should set its `ConstraintVertexOrEdge` attribute if it is a constraint, or its `VertexOrEdgeObjective(*)` attribute if it is an objective function, where * is the vertex or edge identification.")
 
+function _check(model, e, vi::MOI.VariableIndex, vertex::Int)
+    # Check if a variable is associated to a vertex
+    variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
+    if variable_vertex_or_edge != vertex
+        error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex`.")
+    end
+end
+
+function _check(model, e, vi::MOI.VariableIndex, edge::Tuple{Int,Int})
+    # Check if a variable is associated to an edge or its incident vertices.
+    variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
+    if variable_vertex_or_edge != edge[1] && variable_vertex_or_edge != edge[2] && variable_vertex_or_edge != edge
+        error("In expression `$e` of the edge `$Graphs.Edge(edge...)`, the variable `$vi` belongs to vertex or edge `$variable_vertex_or_edge` which is neither the source nor destination of the edge, nor the edge.")
+    end
+end
+
 function _check(model::GCSOptimizer, e, vi::MOI.VariableIndex, vertex::Int)
     # Check if a variable is associated to a vertex
     variable_vertex_or_edge = model.variable_vertex_or_edge[vi]

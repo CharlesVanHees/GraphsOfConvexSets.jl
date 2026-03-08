@@ -22,8 +22,6 @@ g = GraphOfConvexSets(optimizer_with_attributes(
 
 # Construct the graph
 Graphs.add_vertices!(g, 5)
-edges = [(1, 3), (1, 4), (3, 4), (3, 5), (4, 5), (4, 2), (5, 2)]
-for (u,v) in edges Graphs.add_edge!(g, u, v) end
 
 # Create programs on vertices
 x = Vector{Vector{VariableRef}}(undef, 0)
@@ -60,17 +58,46 @@ D = Diagonal([1/2, 1]) # scaling matrix
 @constraint(Vertex(g, 5), [1; x[5][:] - C[5, :]] in SecondOrderCone())
 
 edges = [(1, 3), (1, 4), (3, 4), (3, 5), (4, 5), (4, 2), (5, 2)]
+for (u,v) in edges Graphs.add_edge!(g, u, v) end
 
-cost = Vector{VariableRef}
+cost = Vector{VariableRef}(undef, 0)
 for (src, dst) in edges
     edge = Edge(g, src, dst)
     # Cost of the edge
-    push!(cost, @variable(edge))
-    JuMP.set_objective_function(edge, cost) # TODO : find better
-    @constraint(edge, [cost; x[dst, :] - x[src, :]] in SecondOrderCone())
+    edge_cost = @variable(edge)
+    push!(cost, edge_cost)
+    JuMP.set_objective_function(edge, edge_cost) # TODO : find better
+    @constraint(edge, [edge_cost; x[:][dst] - x[:][src]] in SecondOrderCone())
 
     # Constraint on the edge
-    @constraint(edge, x[src, 2] <= x[dst, 2])
+    @constraint(edge, x[src][2] <= x[dst][2])
 end
 
 shortest_path(g, 1, 2)
+
+sol = MOI.get(g.model, GraphsOfConvexSets.SubGraph())
+
+using GraphPlot
+gplot(sol, nodelabel = 1:5, layout = shell_layout)
+
+xv = value.(x)
+println(xv)
+
+using Plots
+p = plot()
+
+for edge in edges
+    if Graphs.has_edge(sol, edge)
+        v = [edge...]
+        plot!(p, xv[v][1], xv[v][2], arrow = true, label = "", color = :grey, linewidth=2)
+    end
+end
+
+scatter!(p, [C[:, 1]], [C[:, 2]], label = "", markerstrokewidth = 0, markersize = 3)
+
+for v in filter(x -> Graphs.degree(sol,x) > 0, Graphs.vertices(sol))
+    plot!(p, [C[v, 1], xv[v][1]], [C[v, 2], xv[v][2]], label = "", linestyle = :dash, color = :lightgrey)
+    scatter!(p, [xv[v][1]], [xv[v][2]], label = "$v", markerstrokewidth=0)
+end
+
+p

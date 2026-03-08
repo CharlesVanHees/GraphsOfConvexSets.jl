@@ -42,17 +42,17 @@ function JuMP.add_variable(v::Vertex, var...)
 end
 
 function JuMP.add_constraint(v::Vertex, con, var...)
-    println(MOI.get(v.model, VariableVertexOrEdge(), first(JuMP.linear_terms(first(JuMP.jump_function(con))))[2]))
-    println(MOI.get(JuMP.backend(v.model), VariableVertexOrEdge(), JuMP.moi_function(con).terms[1].scalar_term.variable))
-    _check(v.model, con, JuMP.moi_function(con), v.vertex)
+    # println(MOI.get(v.model, VariableVertexOrEdge(), first(JuMP.linear_terms(first(JuMP.jump_function(con))))[2]))
+    # println(MOI.get(JuMP.backend(v.model), VariableVertexOrEdge(), JuMP.moi_function(con).terms[1].scalar_term.variable))
+    _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
     con_ref = JuMP.add_constraint(v.model, con, var...)
     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
     return con_ref
 end
 
 function JuMP.set_objective_function(v::Vertex, func)
-    _check(v.model, func, JuMP.moi_function(func), v.vertex)
-    MOI.set(v.model, VertexOrEdgeObjective(v), moi_function(func))
+    _check(JuMP.backend(v.model), func, JuMP.moi_function(func), v.vertex)
+    MOI.set(v.model, VertexOrEdgeObjective(v.vertex), JuMP.moi_function(func))
 end
 
 struct Edge{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
@@ -64,6 +64,7 @@ struct Edge{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
         return new{M,T}(g.model, (s,d))
     end
 end
+Base.broadcastable(e::Edge) = Ref(e)
 
 function JuMP.add_variable(e::Edge, var...)
     var_ref = JuMP.add_variable(e.model, var...)
@@ -72,26 +73,26 @@ function JuMP.add_variable(e::Edge, var...)
 end
 
 function JuMP.add_constraint(e::Edge, con, var...)
-    _check(e.model, con, JuMP.moi_function(con), e.edge)
+    _check(JuMP.backend(e.model), con, JuMP.moi_function(con), e.edge)
     con_ref = JuMP.add_constraint(e.model, con, var...)
     MOI.set(e.model, ConstraintVertexOrEdge(), con_ref, e.edge)
     return con_ref
 end
 
 function JuMP.set_objective_function(e::Edge, func)
-    _check(e.model, func, JuMP.moi_function(func), e.edge)
-    MOI.set(e.model, VertexOrEdgeObjective(e), moi_function(func))
+    _check(JuMP.backend(e.model), func, JuMP.moi_function(func), e.edge)
+    MOI.set(e.model, VertexOrEdgeObjective(e.edge), JuMP.moi_function(func))
 end
 
-JuMP.set_objective_sense(g::GraphOfConvexSets, sense::MOI.OptimizationSense) = MOI.set_objective_sense(g.model, sense) # Does it make sense as it is intrisincly relative to the problem, i.e., a shortest path problem will be a min problem?
+JuMP.set_objective_sense(g::GraphOfConvexSets, sense::MOI.OptimizationSense) = JuMP.set_objective_sense(g.model, sense) # Does it make sense as it is intrisincly relative to the problem, i.e., a shortest path problem will be a min problem?
 
 # TODO : extract model associated to a given vertex/edge (see what has been done for the serializer)
 
 function shortest_path(g::GraphOfConvexSets{M,T,G}, s::T, t::T) where {M,T,G}
     Graphs.has_vertex(g, s) || Graphs.has_vertex(g, t) || throw(ArgumentError("The graph g does not have either vertex $(s), either vertex $(t)."))
 
-    MOI.set_objective_sense(g.model, sense)
+    JuMP.set_objective_sense(g.model, MOI.MIN_SENSE)
     MOI.set(g.model, Problem(), ShortestPathProblem(1,2))
-    optimize!(g.model)
+    JuMP.optimize!(g.model)
     # TODO
 end

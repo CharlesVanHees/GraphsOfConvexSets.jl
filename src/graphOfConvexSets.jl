@@ -42,8 +42,6 @@ function JuMP.add_variable(v::Vertex, var...)
 end
 
 function JuMP.add_constraint(v::Vertex, con, var...)
-    # println(MOI.get(v.model, VariableVertexOrEdge(), first(JuMP.linear_terms(first(JuMP.jump_function(con))))[2]))
-    # println(MOI.get(JuMP.backend(v.model), VariableVertexOrEdge(), JuMP.moi_function(con).terms[1].scalar_term.variable))
     _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
     con_ref = JuMP.add_constraint(v.model, con, var...)
     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
@@ -94,5 +92,4 @@ function shortest_path(g::GraphOfConvexSets{M,T,G}, s::T, t::T) where {M,T,G}
     JuMP.set_objective_sense(g.model, MOI.MIN_SENSE)
     MOI.set(g.model, Problem(), ShortestPathProblem(1,2))
     JuMP.optimize!(g.model)
-    # TODO
 end

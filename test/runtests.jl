@@ -4,5 +4,5 @@ using JuMP
 using GraphsOfConvexSets
 
 @testset "Dummy" begin
-    @test Optimizer(MOI.Utilities.Model{Float64}) isa MOI.ModelLike
+    @test GCSOptimizer(MOI.Utilities.Model{Float64}) isa MOI.ModelLike
 end

@@ -26,6 +26,23 @@ Graphs.add_vertices!(g, 5)
 # Create programs on vertices
 x = Vector{Vector{VariableRef}}(undef, 0)
 for v in Graphs.vertices(g) push!(x, @variable(Vertex(g, v), [1:2])) end
+Base.broadcastable(g::GraphOfConvexSets) = Ref(g)
+vs = Vertex.(g, )
+
+struct Vertices <: JuMP.AbstractModel
+    g::GraphOfConvexSets
+    vertices::Vector{Int}
+end
+Vertices(g) = Vertices(g, Graphs.vertices(g))
+
+vs = Vertices(g, Graphs.vertices(g))
+function JuMP.add_variable(v::Vertices, info::JuMP.ScalarVariable, name::String)
+    x = JuMP.add_variable(v.g.model, info, "")
+    return [x, x]
+end
+
+x = @variable(Vertices(g), [i = 2:5; isodd(i)])
+x[3][1]
 
 # Centers
 C = [

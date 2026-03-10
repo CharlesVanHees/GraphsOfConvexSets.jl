@@ -6,7 +6,8 @@ using LinearAlgebra
 import GraphsOfConvexSets as GCS
 import Graphs
 
-g = GCS.GraphOfConvexSets(optimizer_with_attributes(
+g = GCS.GraphModel(Graphs.SimpleDiGraph(),
+    optimizer_with_attributes(
         Pajarito.Optimizer,
         "oa_solver" => optimizer_with_attributes(
             HiGHS.Optimizer,
@@ -16,8 +17,7 @@ g = GCS.GraphOfConvexSets(optimizer_with_attributes(
         ),
         "conic_solver" =>
             optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => false),
-    ),
-    Graphs.SimpleDiGraph()
+    )
 )
 
 # Construct the graph

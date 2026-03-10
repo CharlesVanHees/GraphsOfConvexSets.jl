@@ -1,11 +1,55 @@
-import Graphs
-using LinearAlgebra
+const VertexOrEdgeType = Union{Int,Tuple{Int,Int}}
 
-using JuMP
-import MathOptInterface as MOI
+# Variables, Constraints and Model attributes
+struct VariableVertexOrEdge <: MOI.AbstractVariableAttribute end     # Associate to a variable its vertex or edge
+struct ConstraintVertexOrEdge <: MOI.AbstractConstraintAttribute end # Associate to a constraint its vertex or edge
+struct VertexOrEdgeObjective <: MOI.AbstractModelAttribute           # Associate to a vertex or edge an objective
+    vertex_or_edge::VertexOrEdgeType
+end
+struct Problem <: MOI.AbstractModelAttribute end                     # Associate a problem to the model, e.g. SPP
 
-include("graph_problems/shortest_path.jl")
-include("MOI_structures.jl")
+# Optimizer
+mutable struct Optimizer{O} <: MOI.AbstractOptimizer
+    inner::O # Optimizer to use to solve the optimization problem
+    graph::Union{Nothing,Graphs.SimpleDiGraph{Int}} # Represents the graph
+    variable_vertex_or_edge::Dict{MOI.VariableIndex,VertexOrEdgeType} # associate to each variable z a vertex or edge
+    z::Union{Nothing, Vector{MOI.VariableIndex}} # Variables z_v and z_e of the model
+    y::Dict{VertexOrEdgeType,MOI.VariableIndex}  # Associate to each vertex or edge a binary variable y
+    z_v_e::Dict{Tuple{MOI.VariableIndex, MOI.VariableIndex}, MOI.VariableIndex} # associate to each variable z_v and variable y_e, with e adjacent to v, a variable z_v_e : (z, y) => z_v_e
+    function Optimizer(optimizer_constructor)
+        inner = MOI.instantiate(optimizer_constructor, with_bridge_type=Float64)
+        return new{typeof(inner)}(
+            inner,
+            nothing,
+            Dict{MOI.VariableIndex,Int}(),
+            nothing,
+            Dict{VertexOrEdgeType,MOI.VariableIndex}(),
+            Dict{Tuple{MOI.VariableIndex,MOI.VariableIndex},MOI.VariableIndex}(),
+        )
+    end
+end
+
+MOI.is_empty(model::Optimizer) = MOI.is_empty(model.inner) # Returns if the model is empty
+function MOI.empty!(model::Optimizer) # Empty the model
+    MOI.empty!(model.inner)
+    model.graph = nothing
+    empty!(model.variable_vertex_or_edge)
+    model.z = nothing
+    empty!(model.y)
+    empty!(model.z_v_e)
+    return
+end
+
+MOI.supports(model::Optimizer, attr::MOI.AnyAttribute) = MOI.supports(model.inner, attr)
+MOI.supports_constraint(model::Optimizer, F::Type{<:MOI.VectorAffineFunction}, S::Type{<:MOI.AbstractVectorSet}) = MOI.supports_constraint(model.inner, F, S)
+
+MOI.get(model::Optimizer, attr::MOI.AbstractModelAttribute) = MOI.get(model.inner, attr)
+MOI.get(model::Optimizer, attr::MOI.AbstractVariableAttribute, v) = MOI.get(model.inner, attr, v)
+MOI.get(model::Optimizer, attr::MOI.AbstractConstraintAttribute, c) = MOI.get(model.inner, attr, c)
+
+MOI.get(model::Optimizer, attr::VariableVertexOrEdge, v::MOI.VariableIndex) = model.variable_vertex_or_edge[v]
+
+MOI.optimize!(model::Optimizer) = MOI.optimize!(model.inner)
 
 ###################################################################
 
@@ -85,17 +129,18 @@ Check expressions contain only variables of the vertices or edges they are assoc
 """
 _check(_, e, ::MOI.VariableIndex, ::Nothing) = error("Expression `$e` is not assigned to any vertex or edge. You should set its `ConstraintVertexOrEdge` attribute if it is a constraint, or its `VertexOrEdgeObjective(*)` attribute if it is an objective function, where * is the vertex or edge identification.")
 
-function _check(model::Optimizer, e, vi::MOI.VariableIndex, vertex::Int)
+# Comment: this is used both by the GCS Optimizer model and MOI models
+function _check(model::Union{Optimizer, MOI.AbstractOptimizer}, e, vi::MOI.VariableIndex, vertex::Int)
     # Check if a variable is associated to a vertex
-    variable_vertex_or_edge = model.variable_vertex_or_edge[vi]
+    variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
     if variable_vertex_or_edge != vertex
         error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex`.")
     end
 end
 
-function _check(model::Optimizer, e, vi::MOI.VariableIndex, edge::Tuple{Int,Int})
+function _check(model::Union{Optimizer, MOI.AbstractOptimizer}, e, vi::MOI.VariableIndex, edge::Tuple{Int,Int})
     # Check if a variable is associated to an edge or its incident vertices.
-    variable_vertex_or_edge = model.variable_vertex_or_edge[vi]
+    variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
     if variable_vertex_or_edge != edge[1] && variable_vertex_or_edge != edge[2] && variable_vertex_or_edge != edge
         error("In expression `$e` of the edge `$Graphs.Edge(edge...)`, the variable `$vi` belongs to vertex or edge `$variable_vertex_or_edge` which is neither the source nor destination of the edge, nor the edge.")
     end
@@ -170,13 +215,6 @@ function _add_constraints(dest::Optimizer, src::MOI.ModelLike, index_map, ::Type
 end
 
 #################################################################################################
-
-"""
-Function used by the user to set the objective of a vertex or edge
-"""
-function set_vertex_or_edge_objective(model::Model, v_e::VertexOrEdgeType, func::Union{Number, AbstractVariableRef, GenericAffExpr})
-    MOI.set(model, VertexOrEdgeObjective(v_e), moi_function(func))
-end
 
 """
 Construct the objective of the dest model, as the sum of the homogenized costs of the vertices and edges.
@@ -290,4 +328,49 @@ function MOI.get(model::Optimizer, ::SubGraph)
         end
     end
     return graph
+end
+
+####################################################################
+struct ShortestPathProblem
+    source::Int
+    target::Int
+end
+
+MOI.Utilities.map_indices(::Function, p::ShortestPathProblem) = p
+
+function _constrain_admissible_subgraphs(model::Optimizer, spp::ShortestPathProblem)
+    for v in Graphs.vertices(model.graph)
+        y = model.y[v]
+        inv = MOI.VariableIndex[model.y[(u, v)] for u in Graphs.inneighbors(model.graph, v)] # Get the y variables of the incoming edges to v
+        MOI.add_constraint( # sum of incoming edges to v + (v == src) = y_v
+            model.inner,
+            y - dot(ones(length(inv)), inv),
+            MOI.EqualTo(float(v == spp.source)),
+        )
+        outv = MOI.VariableIndex[model.y[(v, u)] for u in Graphs.outneighbors(model.graph, v)] # Get the y variables of the outgoing edges from v
+        MOI.add_constraint( # sum of outgoing edges to v + (v == target) = y_v
+            model.inner,
+            y - dot(ones(length(outv)), outv),
+            MOI.EqualTo(float(v == spp.target)),
+        )
+    end
+    MOI.add_constraint(model.inner, model.y[spp.source], MOI.EqualTo(1.)) # y_s = 1
+    MOI.add_constraint(model.inner, model.y[spp.target], MOI.EqualTo(1.)) # y_t = 1
+    for z in model.z
+        v_e = model.variable_vertex_or_edge[z]
+        if v_e isa Int # It is a vertex
+            inv = MOI.VariableIndex[model.z_v_e[(z, model.y[(u, v_e)])] for u in Graphs.inneighbors(model.graph, v_e)] # Get the z_e variables of the incoming edges to v_e
+            MOI.add_constraint( # z = sum of z_e of incoming edges to v + z * (v_e == src)
+                model.inner,
+                z - dot(ones(length(inv)), inv) - float(v_e == spp.source) * z,
+                MOI.EqualTo(0.0),
+            )
+            outv = MOI.VariableIndex[model.z_v_e[(z, model.y[(v_e, u)])] for u in Graphs.outneighbors(model.graph, v_e)] # Get the z_e variables of the outgoing edges from v_e
+            MOI.add_constraint( # z = sum of z_e of outgoing edges from v + z * (v_e == target)
+                model.inner,
+                z - dot(ones(length(outv)), outv) - float(v_e == spp.target) * z,
+                MOI.EqualTo(0.0),
+            )
+        end
+    end
 end

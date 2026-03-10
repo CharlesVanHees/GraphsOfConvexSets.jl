@@ -2,7 +2,7 @@ struct GraphOfConvexSets{M <: JuMP.AbstractModel, T, G <: Graphs.AbstractGraph{T
     model::M
     graph::G
 
-    GraphOfConvexSets(optimizer_factory::O, g::G) where {O <: MOI.OptimizerWithAttributes, T, G <: Graphs.AbstractGraph{T}} = new{JuMP.Model, T, G}(JuMP.Model(() -> GCSOptimizer(optimizer_factory)), g)
+    GraphOfConvexSets(optimizer_factory::O, g::G) where {O <: MOI.OptimizerWithAttributes, T, G <: Graphs.AbstractGraph{T}} = new{JuMP.Model, T, G}(JuMP.Model(() -> Optimizer(optimizer_factory)), g)
 end
 
 Graphs.nv(g::GraphOfConvexSets) = Graphs.nv(g.graph)
@@ -81,8 +81,6 @@ function JuMP.set_objective_function(e::Edge, func)
     _check(JuMP.backend(e.model), func, JuMP.moi_function(func), e.edge)
     MOI.set(e.model, VertexOrEdgeObjective(e.edge), JuMP.moi_function(func))
 end
-
-JuMP.set_objective_sense(g::GraphOfConvexSets, sense::MOI.OptimizationSense) = JuMP.set_objective_sense(g.model, sense) # Does it make sense as it is intrisincly relative to the problem, i.e., a shortest path problem will be a min problem?
 
 # TODO : extract model associated to a given vertex/edge (see what has been done for the serializer)
 

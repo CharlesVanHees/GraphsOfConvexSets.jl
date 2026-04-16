@@ -31,8 +31,8 @@ for v in Graphs.vertices(g) push!(x, @variable(GCS.Vertex(g, v), [1:2])) end
 # Test with variables on multiple vertices at once
 vs = GCS.Vertices(g, Graphs.vertices(g))
 @variable(vs, y[i = 1:5; isodd(i)])
-println(typeof(y))
-println(y)
+@constraint(vs, y[1] + y[3] .== 1)
+
 ####################################################
 
 # Centers

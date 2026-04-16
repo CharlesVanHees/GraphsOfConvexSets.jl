@@ -76,13 +76,16 @@ function JuMP.add_variable(vs::Vertices, var...)
     MOI.set.(vs.model, VariableVertexOrEdge(), var_ref, vs.vertices)
     return var_ref
 end
-# function JuMP.add_constraint(v::Vertex, con, var...)
-#     _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
-#     con_ref = JuMP.add_constraint(v.model, con, var...)
-#     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
-#     return con_ref
-# end
-# function JuMP.set_objective_function(v::Vertex, func)
+function JuMP.add_constraint(vs::Vertices, con, var...)
+    # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
+    println(typeof(con))
+    println(MOI.get.(vs.model, VariableVertexOrEdge(), con.func.terms.keys))
+    println(typeof(con.func.terms))
+    con_ref = JuMP.add_constraint(vs.model, con, var...)
+    MOI.set.(vs.model, ConstraintVertexOrEdge(), con_ref, vs.vertices)
+    return con_ref
+end
+# function JuMP.set_objective_function(v::Vertices, func)
 #     _check(JuMP.backend(v.model), func, JuMP.moi_function(func), v.vertex)
 #     MOI.set(v.model, VertexOrEdgeObjective(v.vertex), JuMP.moi_function(func))
 # end

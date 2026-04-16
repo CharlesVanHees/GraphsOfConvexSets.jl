@@ -134,7 +134,7 @@ function _check(model::Union{Optimizer, MOI.AbstractOptimizer}, e, vi::MOI.Varia
     # Check if a variable is associated to a vertex
     variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
     if variable_vertex_or_edge != vertex
-        error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex`.")
+        error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex_or_edge`.")
     end
 end
 

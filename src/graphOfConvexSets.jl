@@ -68,7 +68,17 @@ struct Vertices{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
     end
     Vertices(g::GraphModel{T,G,M}) where {M <: JuMP.AbstractModel, T<:Integer, G<:Graphs.AbstractGraph{T}} = Vertices(g, Graphs.vertices(g))
 end
-Base.broadcastable(vs::Vertices) = Ref(vs)
+Base.size(v::Vertices) = Base.size(v.vertices)
+Base.length(v::Vertices) = Base.length(v.vertices)
+function Base.iterate(v::Vertices, args...)
+    item_state = Base.iterate(v.vertices, args...)
+    if isnothing(item_state)
+        return nothing
+    end
+    item, state = item_state
+    return Vertex(v.model, item), state
+end
+#Base.broadcastable(vs::Vertices) = Ref(vs)
 JuMP.object_dictionary(vs::Vertices) = JuMP.object_dictionary(vs.model)
 
 function JuMP.add_variable(vs::Vertices, var...)

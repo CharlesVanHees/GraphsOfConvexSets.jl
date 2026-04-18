@@ -29,12 +29,13 @@ Graphs.outneighbors(g::GraphModel, v::I) where {I <: Integer} = Graphs.outneighb
 ####################################################################################
 
 struct Vertex{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
+    g::GraphModel
     model::M
     vertex::T
 
     function Vertex(g::GraphModel{T,G,M}, v::T) where {M <: JuMP.AbstractModel, T<:Integer, G<:Graphs.AbstractGraph{T}}
         Graphs.has_vertex(g,v) || throw(BoundsError("The graph g does not have a vertex $(v). You can add it through the add_vertex! method."))
-        return new{M,T}(g.model, v)
+        return new{M,T}(g, g.model, v)
     end
 end
 Base.broadcastable(v::Vertex) = Ref(v)
@@ -59,12 +60,13 @@ end
 ####################################################################################
 
 struct Vertices{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
+    g::GraphModel
     model::M
     vertices::Vector{T}
 
     function Vertices(g::GraphModel{T,G,M}, vs) where {M <: JuMP.AbstractModel, T<:Integer, G<:Graphs.AbstractGraph{T}}
         all(Graphs.has_vertex.(g,vs)) || throw(BoundsError("The graph g does not have all vertices in $(vs). You can add it through the add_vertex! method."))
-        return new{M,T}(g.model, vs)
+        return new{M,T}(g, g.model, vs)
     end
     Vertices(g::GraphModel{T,G,M}) where {M <: JuMP.AbstractModel, T<:Integer, G<:Graphs.AbstractGraph{T}} = Vertices(g, Graphs.vertices(g))
 end
@@ -76,9 +78,8 @@ function Base.iterate(v::Vertices, args...)
         return nothing
     end
     item, state = item_state
-    return Vertex(v.model, item), state
+    return Vertex(v.g, item), state
 end
-#Base.broadcastable(vs::Vertices) = Ref(vs)
 JuMP.object_dictionary(vs::Vertices) = JuMP.object_dictionary(vs.model)
 
 function JuMP.add_variable(vs::Vertices, var...)
@@ -86,15 +87,14 @@ function JuMP.add_variable(vs::Vertices, var...)
     MOI.set.(vs.model, VariableVertexOrEdge(), var_ref, vs.vertices)
     return var_ref
 end
-function JuMP.add_constraint(vs::Vertices, con, var...)
-    # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
-    println(typeof(con))
-    println(MOI.get.(vs.model, VariableVertexOrEdge(), con.func.terms.keys))
-    println(typeof(con.func.terms))
-    con_ref = JuMP.add_constraint(vs.model, con, var...)
-    MOI.set.(vs.model, ConstraintVertexOrEdge(), con_ref, vs.vertices)
-    return con_ref
-end
+
+# function JuMP.add_constraint(vs::Vertices, con, var...)
+#     # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
+#     println("Hello")
+#     con_ref = JuMP.add_constraint(v.model, con, var...)
+#     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
+#     return con_ref
+# end
 # function JuMP.set_objective_function(v::Vertices, func)
 #     _check(JuMP.backend(v.model), func, JuMP.moi_function(func), v.vertex)
 #     MOI.set(v.model, VertexOrEdgeObjective(v.vertex), JuMP.moi_function(func))
@@ -103,12 +103,13 @@ end
 ####################################################################################
 
 struct Edge{M <: JuMP.AbstractModel, T<:Integer} <: JuMP.AbstractModel
+    g::GraphModel
     model::M
     edge::Tuple{T, T}
 
     function Edge(g::GraphModel{T,G,M}, s::T, d::T) where {M <: JuMP.AbstractModel, T <: Integer, G<: Graphs.AbstractGraph{T}}
         Graphs.has_edge(g,s,d) || throw(BoundsError("The graph g does not have an edge from $(s) to $(d). You can add it through the add_edge! method."))
-        return new{M,T}(g.model, (s,d))
+        return new{M,T}(g, g.model, (s,d))
     end
 end
 Base.broadcastable(e::Edge) = Ref(e)

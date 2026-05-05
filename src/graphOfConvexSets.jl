@@ -88,6 +88,11 @@ function JuMP.add_variable(vs::Vertices, var...)
     return var_ref
 end
 
+function JuMP.parse_constraint_head(error::Function, ::Val{:.}, s::Symbol, r::Expr)
+    parse_code, build_call = JuMP.parse_constraint_call(error, true, Val(s), r.args...)
+    return true, parse_code, build_call
+end
+
 # function JuMP.add_constraint(vs::Vertices, con, var...)
 #     # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
 #     println("Hello")

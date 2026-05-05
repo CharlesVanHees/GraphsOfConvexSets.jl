@@ -34,9 +34,14 @@ vs = GCS.Vertices(g, Graphs.vertices(g));
 @constraint(vs, test, y[1] + y[3] .== 1)
 println(MOI.get.(g.model, GCS.ConstraintVertexOrEdge(), test))
 
+f(y) = [1, y]
+
 # Problem: JuMP want to parse the vector [1; y[1]] to broadcast it on all elements of vs,
 # but vs has 5 elements while [1; y[1]] has 6.
-@constraint(vs, [1; y[1]] in MOI.SecondOrderCone(6))
+@constraint(vs, in.(f.(y[1]), Ref(SecondOrderCone())))
+
+h(y) = JuMP.build_constraint(error, [1, y], SecondOrderCone())
+JuMP.add_constraint.(vs, h.(y[1]))
 
 ####################################################
 

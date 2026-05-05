@@ -27,6 +27,24 @@ Graphs.add_vertices!(g, 5)
 x = Vector{Vector{VariableRef}}(undef, 0)
 for v in Graphs.vertices(g) push!(x, @variable(GCS.Vertex(g, v), [1:2])) end
 
+####################################################
+# Test with variables on multiple vertices at once
+vs = GCS.Vertices(g, Graphs.vertices(g));
+@variable(vs, y[i = 1:5])
+@constraint(vs, test, y[1] + y[3] .== 1)
+println(MOI.get.(g.model, GCS.ConstraintVertexOrEdge(), test))
+
+f(y) = [1, y]
+
+# Problem: JuMP want to parse the vector [1; y[1]] to broadcast it on all elements of vs,
+# but vs has 5 elements while [1; y[1]] has 6.
+@constraint(vs, in.(f.(y[1]), Ref(SecondOrderCone())))
+
+h(y) = JuMP.build_constraint(error, [1, y], SecondOrderCone())
+JuMP.add_constraint.(vs, h.(y[1]))
+
+####################################################
+
 # Centers
 C = [
      1    0

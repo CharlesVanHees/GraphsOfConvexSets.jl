@@ -2,7 +2,13 @@ struct GraphModel{T, G <: Graphs.AbstractGraph{T}, M <: JuMP.AbstractModel} <: G
     graph::G
     model::M
 
-    GraphModel(g::G, optimizer_factory::O) where {T, G <: Graphs.AbstractGraph{T}, O <: MOI.OptimizerWithAttributes} = new{T, G, JuMP.Model}(g, JuMP.Model(() -> Optimizer(optimizer_factory)))
+    function GraphModel(
+        g::G,
+        @nospecialize(optimizer_factory = nothing);
+        kwargs...
+    ) where {T, G <: Graphs.AbstractGraph{T}}
+        new{T, G, JuMP.Model}(g, JuMP.Model(optimizer_factory, kwargs...))
+    end
 end
 
 Graphs.nv(g::GraphModel) = Graphs.nv(g.graph)

@@ -95,7 +95,7 @@ function _mult_subs(model::Optimizer, variableIndex::MOI.VariableIndex, ineq::MO
 end
 
 # This method consider the case where the first affine function is just z_v or z_e, and the second linear function is just y_v or y_e.
-_mult_subs(model::Optimizer, variableIndex::MOI.VariableIndex, ineq::MOI.VariableIndex) = haskey(model.z_v_e, (variableIndex, ineq)) ? model.z_v_e[(variableIndex, ineq)] : variableIndex
+_mult_subs(model::Optimizer, variableIndex::MOI.VariableIndex, ineq::MOI.VariableIndex) = haskey(model.z_v_e, (variableIndex, ineq)) ? model.z_v_egc[(variableIndex, ineq)] : variableIndex
 
 function _mult_subs(model::Optimizer, affine::MOI.ScalarAffineFunction{T}, ineq) where {T}
     # This method handles a whole scalar affine function a*z + b, taking the terms one by one.
@@ -134,7 +134,7 @@ function _check(model::Union{Optimizer, MOI.AbstractOptimizer}, e, vi::MOI.Varia
     # Check if a variable is associated to a vertex
     variable_vertex_or_edge = MOI.get(model, VariableVertexOrEdge(), vi)
     if variable_vertex_or_edge != vertex
-        error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex`.")
+        error("In expression `$e` of the vertex `$vertex`, the variable `$vi` belongs to a different vertex or edge `$variable_vertex_or_edge`.")
     end
 end
 

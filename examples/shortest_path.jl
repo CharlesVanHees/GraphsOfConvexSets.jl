@@ -27,6 +27,8 @@ Graphs.add_vertices!(g, 5)
 x = Vector{Vector{VariableRef}}(undef, 0)
 for v in Graphs.vertices(g) push!(x, @variable(GCS.Vertex(g, v), [1:2])) end
 
+####################################################
+
 # Centers
 C = [
      1    0
@@ -98,4 +100,4 @@ for v in filter(x -> Graphs.degree(sol,x) > 0, Graphs.vertices(sol))
     scatter!(p, [getindex(xv[v], 1)], [getindex(xv[v], 2)], label = "$v", markerstrokewidth=0)
 end
 
-p
+display(p);

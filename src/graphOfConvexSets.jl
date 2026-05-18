@@ -4,10 +4,14 @@ struct GraphModel{T, G <: Graphs.AbstractGraph{T}, M <: JuMP.AbstractModel} <: G
 
     function GraphModel(
         g::G,
-        @nospecialize(optimizer_factory = nothing);
+        optimizer_factory::O = nothing;
         kwargs...
-    ) where {T, G <: Graphs.AbstractGraph{T}}
-        new{T, G, JuMP.Model}(g, JuMP.Model(optimizer_factory, kwargs...))
+    ) where {T, G <: Graphs.AbstractGraph{T}, O <: MOI.OptimizerWithAttributes}
+        if optimizer_factory !== nothing
+            return new{T, G, JuMP.Model}(g, JuMP.Model(() -> Optimizer(optimizer_factory)))
+        else
+            return new{T, G, JuMP.Model}(g, JuMP.Model(optimizer_factory, kwargs...))
+        end
     end
 end
 Base.broadcastable(g::GraphModel) = Ref(g)

@@ -18,6 +18,7 @@ Graphs.add_vertices!(g,5) # Add vertices
 vs = GCS.Vertices(g, Graphs.vertices(g)); # This model concerns all the vertices of the graph
 @variable(vs, 0 ≤ x[i = 1:2] ≤ 2) # Define a vertex of 2 variables on each vertex of vs
 # Remark: x is a Vector with 2 Vectors of 5 VariableRef
+# Hence, we transpose it as it will be more convenient
 x = collect.(eachrow(stack(x)))
 
 

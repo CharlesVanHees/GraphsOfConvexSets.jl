@@ -4,9 +4,9 @@ struct GraphModel{T, G <: Graphs.AbstractGraph{T}, M <: JuMP.AbstractModel} <: G
 
     function GraphModel(
         g::G,
-        optimizer_factory::O = nothing;
+        optimizer_factory = nothing;
         kwargs...
-    ) where {T, G <: Graphs.AbstractGraph{T}, O <: MOI.OptimizerWithAttributes}
+    ) where {T, G <: Graphs.AbstractGraph{T}, O <: Union{MOI.OptimizerWithAttributes, Nothing}}
         if optimizer_factory !== nothing
             return new{T, G, JuMP.Model}(g, JuMP.Model(() -> Optimizer(optimizer_factory)))
         else

@@ -94,16 +94,13 @@ function JuMP.add_variable(vs::Vertices, var...)
     return var_ref
 end
 
-function JuMP.parse_constraint_head(error::Function, ::Val{:.}, s::Symbol, r::Expr)
-    parse_code, build_call = JuMP.parse_constraint_call(error, true, Val(s), r.args...)
-    return true, parse_code, build_call
-end
-
+# Base.broadcastable(vs::Vertices) = Ref(vs)
 # function JuMP.add_constraint(vs::Vertices, con, var...)
-#     # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), v.vertex)
+#     # _check(JuMP.backend(v.model), con, JuMP.moi_function(con), vs.vertices)
 #     println("Hello")
-#     con_ref = JuMP.add_constraint(v.model, con, var...)
-#     MOI.set(v.model, ConstraintVertexOrEdge(), con_ref, v.vertex)
+#     println(con)
+#     con_ref = JuMP.add_constraint(vs.model, con, var...)
+#     MOI.set(vs.model, ConstraintVertexOrEdge(), con_ref, vs.vertices)
 #     return con_ref
 # end
 # function JuMP.set_objective_function(v::Vertices, func)

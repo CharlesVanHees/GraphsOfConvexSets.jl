@@ -19,7 +19,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Quickstart" => "quickstart.md",
-        "Bibliography" => "references.bib"
+        "Bibliography" => "bibliography.md"
     ],
     # plugins = [links],
     plugins = [

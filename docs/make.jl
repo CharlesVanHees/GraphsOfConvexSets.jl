@@ -14,7 +14,7 @@ makedocs(
     ),
     modules = [GraphsOfConvexSets],
     repo = "https://github.com/CharlesVanHees/GraphsOfConvexSets.jl/blob/{commit}{path}#{line}",
-    # checkdocs = :none,
+    checkdocs = :none,
     # clean = true,
     pages = [
         "Home" => "index.md",

@@ -1,6 +1,7 @@
 using Documenter
 using DocumenterInterLinks
 using GraphsOfConvexSets
+import DocumenterCitations
 
 # links = InterLinks("MathOptInterface" => "https://jump.dev/MathOptInterface.jl/stable/")
 
@@ -21,6 +22,12 @@ makedocs(
         "Bibliography" => "references.bib"
     ],
     # plugins = [links],
+    plugins = [
+        DocumenterCitations.CitationBibliography(
+            joinpath(@__DIR__, "src", "references.bib");
+            style = :authoryear,
+        ),
+    ],
 )
 
 deploydocs(

@@ -10,7 +10,7 @@ struct GraphModel{T, G <: Graphs.AbstractGraph{T}, M <: JuMP.AbstractModel} <: G
         if optimizer_factory !== nothing
             return new{T, G, JuMP.Model}(g, JuMP.Model(() -> Optimizer(optimizer_factory); kwargs...))
         else
-            return new{T, G, JuMP.Model}(g, JuMP.Model(optimizer_factory, kwargs...))
+            return new{T, G, JuMP.Model}(g, JuMP.Model(; kwargs...))
         end
     end
 end

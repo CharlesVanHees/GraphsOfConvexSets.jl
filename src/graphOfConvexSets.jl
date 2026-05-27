@@ -4,7 +4,7 @@ struct GraphModel{T, G <: Graphs.AbstractGraph{T}, M <: JuMP.AbstractModel} <: G
 
     function GraphModel(
         g::G,
-        optimizer_factory::O = nothing;
+        @nospecialize(optimizer_factory::O = nothing);
         kwargs...
     ) where {T, G <: Graphs.AbstractGraph{T}, O <: Union{MOI.OptimizerWithAttributes, Nothing}}
         if optimizer_factory !== nothing

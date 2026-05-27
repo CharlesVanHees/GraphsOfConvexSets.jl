@@ -37,7 +37,7 @@ julia> g = GCS.GraphModel(Graphs.SimpleDiGraph(),
                )
            )
 GraphsOfConvexSets.GraphModel{Int64, Graphs.SimpleGraphs.SimpleDiGraph{Int64}, Model}(Graphs.SimpleGraphs.SimpleDiGraph{Int64}(0, Vector{Int64}[], Vector{Int64}[]), A JuMP Model
-├ solver: Pajarito
+├ solver: unknown
 ├ objective_sense: FEASIBILITY_SENSE
 ├ num_variables: 0
 ├ num_constraints: 0

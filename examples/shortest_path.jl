@@ -20,6 +20,7 @@ g = GCS.GraphModel(Graphs.SimpleDiGraph(),
     )
 )
 
+
 # Construct the graph
 Graphs.add_vertices!(g, 5)
 

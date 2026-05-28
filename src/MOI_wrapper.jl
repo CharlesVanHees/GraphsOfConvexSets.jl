@@ -40,6 +40,8 @@ function MOI.empty!(model::Optimizer) # Empty the model
     return
 end
 
+MOI.get(model::Optimizer, solver_name::MOI.SolverName) = "GCS_with_$(MOI.get(model.inner, solver_name))"
+
 MOI.supports(model::Optimizer, attr::MOI.AnyAttribute) = MOI.supports(model.inner, attr)
 MOI.supports_constraint(model::Optimizer, F::Type{<:MOI.VectorAffineFunction}, S::Type{<:MOI.AbstractVectorSet}) = MOI.supports_constraint(model.inner, F, S)
 

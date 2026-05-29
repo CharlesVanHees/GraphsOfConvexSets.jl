@@ -19,7 +19,7 @@ g = GCS.GraphModel(Graphs.SimpleDiGraph(),
             optimizer_with_attributes(Hypatia.Optimizer, MOI.Silent() => false),
     )
 )
-
+println(g)
 
 # Construct the graph
 Graphs.add_vertices!(g, 5)

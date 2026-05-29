@@ -78,14 +78,93 @@ end
 GCS.shortest_path(g, 1, 2)
 
 sol = MOI.get(g.model, GCS.SubGraph())
-
-using GraphPlot
-gplot(sol, nodelabel = 1:5, layout = shell_layout)
-
 xv = value.(x)
+
+
+############################################
+## Visualize the solution
+############################################
 
 using Plots
 p = plot()
+
+rgb(r,g,b) = RGB(r/255, g/255, b/255)
+
+# Draw the five convex vertices
+# S_1
+c1 = rgb(56, 130, 221)
+plot!(p,
+    Shape(1 .+ cos.(range(0, 2π, 300)),
+          2 .* sin.(range(0, 2π, 300))),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c1,
+    fillcolor = c1,
+    fillalpha = 0.3
+)
+
+# S_2
+c2 = rgb(220, 90, 56)
+plot!(p,
+    Shape([10 .+ 2 .* cos.(range(π/2, 3π/2, 300)); 10; 10],
+          [sin.(range(π/2, 3π/2, 300)); -1; -1]),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c2,
+    fillcolor = c2,
+    fillalpha = 0.3
+)
+
+# S_3
+c3 = rgb(80, 170, 120)
+plot!(p,
+    Shape([3, 5, 5, 3, 3],
+          [1, 1, 3, 3, 1]),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c3,
+    fillcolor = c3,
+    fillalpha = 0.3
+)
+
+# S_4
+c4 = rgb(150, 90, 200)
+plot!(p,
+    Shape([4.3, 5.5, 6.7, 5.5, 4.3],
+          [-2, -3.2, -2, -0.8, -2]),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c4,
+    fillcolor = c4,
+    fillalpha = 0.3
+)
+plot!(p, 
+    Shape(5.5 .+ cos.(range(0, 2π, 300)),
+          -2  .+ sin.(range(0, 2π, 300))),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c4,
+    fillcolor = c4,
+    fillalpha = 0.3
+)
+
+# S_5
+c5 = rgb(230, 160, 30)
+plot!(p, 
+    Shape(7 .+ cos.(range(0, 2π, 300)),
+          2 .+ sin.(range(0, 2π, 300))),
+    aspect_ratio = :equal,
+    label = "",
+    linecolor = c5,
+    fillcolor = c5,
+    fillalpha = 0.3
+)
+
+# Plot the shortest path
+
+for v in filter(x -> Graphs.degree(sol,x) > 0, Graphs.vertices(sol))
+    scatter!(p, [getindex(xv[v], 1)], [getindex(xv[v], 2)], label = "", markersize=5, markercolor = :red)
+end
 
 for edge in edges
     if Graphs.has_edge(sol, edge)
@@ -94,11 +173,5 @@ for edge in edges
     end
 end
 
-scatter!(p, [C[:, 1]], [C[:, 2]], label = "", markerstrokewidth = 0, markersize = 3)
-
-for v in filter(x -> Graphs.degree(sol,x) > 0, Graphs.vertices(sol))
-    plot!(p, [C[v, 1], getindex(xv[v], 1)], [C[v, 2], getindex(xv[v], 2)], label = "", linestyle = :dash, color = :lightgrey)
-    scatter!(p, [getindex(xv[v], 1)], [getindex(xv[v], 2)], label = "$v", markerstrokewidth=0)
-end
-
-display(p);
+savefig("./pirlou.pdf")
+# display(p);

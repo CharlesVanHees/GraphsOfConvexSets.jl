@@ -173,5 +173,4 @@ for edge in edges
     end
 end
 
-savefig("./pirlou.pdf")
-# display(p);
+display(p);

@@ -1,8 +1,12 @@
 # GraphsOfConvexSets.jl
 
-| **Build Status** |
-|:----------------:|
-| [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] |
+| **Documentation** | **Build Status** |
+|:-----------------:|:----------------:|
+| [![][docs-dev-img]][docs-dev-url] | [![Build Status][build-img]][build-url] [![Codecov branch][codecov-img]][codecov-url] |
+
+[docs-stable-img]: https://img.shields.io/badge/docs-stable-blue.svg
+[docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
+[docs-dev-url]: https://charlesvanhees.github.io/GraphsOfConvexSets.jl/dev/
 
 [build-img]: https://github.com/TobiaMarcucci/GraphsOfConvexSets.jl/actions/workflows/ci.yml/badge.svg?branch=main
 [build-url]: https://github.com/TobiaMarcucci/GraphsOfConvexSets.jl/actions?query=workflow%3ACI
